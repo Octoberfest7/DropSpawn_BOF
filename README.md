@@ -4,7 +4,7 @@
 DropSpawn is a CobaltStrike BOF used to spawn additional Beacons via a relatively unknown method of DLL hijacking. Works x86-x86, x64-x64, and x86-x64/vice versa. Use as an alternative to process injection.  
 
 [Windows executables will follow the DLL search order](https://dmcxblue.gitbook.io/red-team-notes/persistence/dll-search-order-hijacking) when trying to load DLL's whose absolute paths were not specified:  
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/2b00b6f3-9152-489e-ace4-a0a45d3869e9)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/c4251d34-f7ba-45bc-84b4-27536c757324)
 
 DLL hijacking typically requires that either:  
 
@@ -24,20 +24,19 @@ The public release of DropSpawn differs slightly from the non-public one. The no
 ## How to Use
 ### 1.
 Identify some target executables that try to load DLL's without specifying their absolute paths. You can do this by copying the exe into a user-writable directory and executing it while monitoring it with [Procmon](https://learn.microsoft.com/en-us/sysinternals/downloads/procmon). In this example we'll use WerFault.exe which normally resides at C:\Windows\System32\WerFault.exe
-
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/82436cb3-3866-4147-9034-e22a04909c59)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/e4c88036-0018-41d4-88a1-cd429669e39b)
 
 In the above example cryptsp.dll, wer.dll, dbghelp.dll, and bcrypt.dll are all viable candidates because their absolute paths were not specified within WerFault; as a result, WerFault will attempt to load them from its application directory first before resorting to the rest of the DLL search order. Note that this typically isn't a concern because WerFault's application directory IS System32.
 
 ### 2.
 Download one of the hijackable DLL's from the target system.   
 
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/ab492c4d-e5f3-4024-82b0-113e3448f01f)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/2938bd57-90ff-450f-b82a-0704292f30f7)
 This is necessary so that we can extract its exports and include them in our payload DLL. It is important to grab the hijackable DLL from the same machine you wish you use DropSpawn on, as DLL's change between Windows versions. Additionally, if you are running a x86 beacon and want to spawn an x64 beacon using DropSpawn, make sure you download the x64 version of the real DLL by specifying 'C:\windows\sysnative\...' instead of 'C:\windows\system32\...'.
 
 ### 3.
 Run generate_dll.py, passing in the downloaded DLL and the desired payload architecture. Generate_dll.py is a modified version of [this script](https://github.com/tothi/dll-hijack-by-proxying). It will parse the supplied DLL, create a .def file containing the DLL's exports, and call MingW to compile our demonstration payload DLL. When the spawned process tries to call a real function within the spoofed DLL, our payload DLL will forward the call to the real DLL located in System32 so that the host process doesn't crash.
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/c7b271eb-39c0-43d8-8241-7c601f26151f)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/eb9f10d9-4775-4ea1-8de5-ff6a8ec5ded6)
 
 ### 4.
 Call dropspawn using the generated payload DLL. 
@@ -54,9 +53,9 @@ Example: dropspawn /root/dbgcore.dll x64 "WerFault.exe -u -p 4352 -s 160" C:\use
 
 This will drop the payload DLL 'dbgcore.dll' to disk at 'c:\users\user\appdata\local\temp\dbgcore.dll' and spawn a x64 WerFault.exe process with the commandline arguments '-u -p 4352 -s 160' and explorer.exe as the parent process.
 
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/d42811f7-56a3-49b9-a151-d742048eac66)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/1d1da108-9603-4bd0-8cff-4f47960a5b8c)
 
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/e2b52404-28b4-4718-a40e-90ecb7e24d72)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/730bfe59-9808-413c-8e70-9e8f3788f856)
 
 ### 5.  
 Cleanup is easy. By including the [Self-Deletion](https://github.com/LloydLabs/delete-self-poc) function in the payload DLL that is dropped to disk, it will be deleted as soon as our new process spawns and loads it. This is a game changer, as typically the DLL would be locked on disk so long as our process that loaded it continues to run. If the Self-Deletion technique fails for some reason (or the process fails to spawn), DropSpawn will attempt to delete the payload DLL from disk and will inform the user of the result of the operation either way.
@@ -67,22 +66,21 @@ Process injection typically follows the open remote process -> allocate remote m
 This technique is of course at the mercy of how good your DLL payloads are. But we can take a look at what Windows sees (this next section using the private version of DropSpawn and spawning Beacons).
 
 As far as Event Viewer is concerned, everything looks normal:
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/2af99040-a391-4b10-a6d0-09ce1cb069ff)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/bf68fd99-b673-470a-8d51-b379ceca4769)
 
 In MDE there is very little to see.  
 
 Running dropspawn: 
 
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/b3e0c45e-83ff-48f5-bac8-660f48d17fcd)
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/5bd5c934-018c-47e6-9b14-8d4caeb3a528)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/4baa07ff-def4-4aff-a4e9-5b756e3ba6c3)
 
 MDE Logs:
 
 With PPID spoofing:  
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/c6457525-0d80-4273-98f5-f5921ae16cb9)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/d10f3ceb-4a75-4826-9b22-8fbf0f53a11b)
 
 Without PPID spoofing:
-![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/2e04a2d9-e701-46ed-bd38-5da3a0fb60ca)
+![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/32b8cd5d-d967-466d-b105-eea04c304b8c)
 
 In both cases we see our original beacon process (also a werfault) drop dbgcore.dll to disk, create a new WerFault.exe process, the newly spawned process loading dbgcore.dll, and then renaming (deleting) it. Critically there is no extra scrutiny of dbgcore.dll that often comes with DLL hijacks because we aren't writing it to any often hijacked location, and WerFault.exe (or whatever process you choose to use) isn't really associated with DLL hijacks in the way that things like WmiPrvSE.exe are.
 
