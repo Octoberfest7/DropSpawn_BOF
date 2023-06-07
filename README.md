@@ -1,7 +1,7 @@
 # DropSpawn
 
 ## Introduction
-DropSpawn is a CobaltStrike BOF used to spawn additional Beacons via a relatively unknown method of DLL hijacking. Use as an alternative to process injection.  
+DropSpawn is a CobaltStrike BOF used to spawn additional Beacons via a relatively unknown method of DLL hijacking. Works x86-x86, x64-x64, and x86-x64/vice versa. Use as an alternative to process injection.  
 
 [Windows executables will follow the DLL search order](https://dmcxblue.gitbook.io/red-team-notes/persistence/dll-search-order-hijacking) when trying to load DLL's whose absolute paths were not specified:  
 ![image](https://github.com/Octoberfest7/DropSpawn_BOF/assets/91164728/2b00b6f3-9152-489e-ace4-a0a45d3869e9)
