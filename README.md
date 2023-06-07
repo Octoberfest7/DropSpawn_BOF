@@ -19,7 +19,7 @@ These requirements rule out DLL hijacking for executables residing in C:\Windows
 ***DropSpawn enables DLL hijacking using System32 executables (and others found in additional non-user-writable folders) by spoofing the "The directory from which the application is loaded" to an arbitrary user-specified one.***
 
 ### Note:  
-The public release of DropSpawn differs slightly from the non-public one. The non-public release leverages a proprietary payload generator, making the experience much more seamless for the operator. The public release has been altered slightly to account for the fact that users will their own ways of generating  DLL hijack compatible payloads. A Python3 script as well as source code for a demonstration DLL have been included to assist users in integrating and weaponizing dropspawn. 
+The public release of DropSpawn differs slightly from the non-public one. The non-public release leverages a proprietary payload generator, making the experience much more seamless for the operator. The public release has been altered slightly to account for the fact that users will have their own ways of generating  DLL hijack compatible payloads. A Python3 script as well as source code for a demonstration DLL have been included to assist users in integrating and weaponizing dropspawn. 
 
 ## How to Use
 ### 1.
