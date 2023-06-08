@@ -49,7 +49,7 @@ Call dropspawn using the generated payload DLL.
 **writable target folder** - Optional. If left blank, dropspawn will try to use the Beacon's current directory. Use quotes if there are spaces in the path.  
 **parent** - Optional. The name of the process to use for PPID spoofing with the newly spawned process. If a process is specified that has multiple running instances of difference privilege levels (i.e. svchost.exe), dropspawn will try and identify one that can be used for PPID spoofing.
 
-Example: dropspawn /root/dbgcore.dll x64 "WerFault.exe -u -p 4352 -s 160" C:\users\user\appdata\local\temp explorer.exe
+Example: dropspawn /root/gitlab/DropSpawn_BOF/dist/dbgcore.dll x64 "WerFault.exe -u -p 4352 -s 160" C:\users\user\appdata\local\temp explorer.exe
 
 This will drop the payload DLL 'dbgcore.dll' to disk at 'c:\users\user\appdata\local\temp\dbgcore.dll' and spawn a x64 WerFault.exe process with the commandline arguments '-u -p 4352 -s 160' and explorer.exe as the parent process.
 
